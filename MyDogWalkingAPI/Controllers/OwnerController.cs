@@ -84,10 +84,12 @@ namespace MyDogWalkingAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                    SELECT o.Id, o.Name, o.Address, o.NeighborhoodId, o.Address, o.Phone, n.Name AS NeighborhoodName
+                    SELECT o.Id, o.Name, o.Address, o.NeighborhoodId, o.Address, o.Phone, n.Name AS NeighborhoodName, d.Name AS DogName, d.Breed
                     FROM Owner o
                     LEFT JOIN Neighborhood n
                     ON n.Id= o.NeighborhoodId
+                    LEFT JOIN Dog d
+                    ON d.ownerId = o.Id 
                     WHERE o.Id = @id";
 
                     cmd.Parameters.Add(new SqlParameter("@id", Id));
@@ -95,22 +97,33 @@ namespace MyDogWalkingAPI.Controllers
 
                     Owner owner= null;
 
-                    if (reader.Read())
+                    while (reader.Read())
                     {
-                        owner = new Owner
+                        if  (owner == null)
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Address = reader.GetString(reader.GetOrdinal("Address")),
-                            Phone = reader.GetString(reader.GetOrdinal("Phone")),
-                            NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
-                            Neighborhood = new Neighborhood
+
+                            owner = new Owner
                             {
-                                Id = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
-                                Name = reader.GetString(reader.GetOrdinal("NeighborhoodName"))
-                            }
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                Name = reader.GetString(reader.GetOrdinal("Name")),
+                                Address = reader.GetString(reader.GetOrdinal("Address")),
+                                Phone = reader.GetString(reader.GetOrdinal("Phone")),
+                                NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
+                                Neighborhood = new Neighborhood
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
+                                    Name = reader.GetString(reader.GetOrdinal("NeighborhoodName"))
+                                },
+                                Dogs = new List<Dog>()
 
                         };
+
+                        }
+                        owner.Dogs.Add(new Dog {
+                            Name = reader.GetString(reader.GetOrdinal("DogName")),
+                            Breed = reader.GetString(reader.GetOrdinal("Breed"))
+
+                        });
                     }
                     reader.Close();
 
