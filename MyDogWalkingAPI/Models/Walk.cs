@@ -8,7 +8,7 @@ namespace MyDogWalkingAPI.Models
     public class Walk
     {
         public int Id { get; set; }
-        public string Date { get; set; }
+        public DateTime Date { get; set; }
 
         public int Duration { get; set; }
         public string Notes { get; set; }

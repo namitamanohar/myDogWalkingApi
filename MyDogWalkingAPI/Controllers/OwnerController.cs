@@ -32,47 +32,22 @@ namespace MyDogWalkingAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get(
+            [FromQuery] int? neighborhoodId,
+            [FromQuery] string include, 
+            [FromQuery] string q)
         {
-            using (SqlConnection conn = Connection)
+
+
+           if (include != "neighborhoodName")
             {
-                conn.Open();
-                using (SqlCommand cmd = conn.CreateCommand())
-                {
-                    cmd.CommandText = @"
-                    SELECT o.Id, o.Name, o.Address, o.NeighborhoodId, o.Address, o.Phone, n.Name AS NeighborhoodName
-                    FROM Owner o
-                    LEFT JOIN Neighborhood n
-                    ON n.Id= o.NeighborhoodId";
-
-                    SqlDataReader reader = cmd.ExecuteReader();
-
-                    List<Owner> owners = new List<Owner>();
-
-                    while (reader.Read())
-                    {
-                        Owner owner= new Owner
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Address = reader.GetString(reader.GetOrdinal("Address")),
-                            Phone = reader.GetString(reader.GetOrdinal("Phone")),
-                            NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
-                            Neighborhood = new Neighborhood
-                            {
-                                Id = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
-                                Name = reader.GetString(reader.GetOrdinal("NeighborhoodName"))
-                            }
-
-                        };
-
-                        owners.Add(owner);
-                    }
-                    reader.Close();
-
-                    return Ok(owners);
-                }
-            }
+                var owners = GetAllOwners(neighborhoodId, q);
+                return Ok(owners);
+            }else
+            {
+                var owners = GetOwnerWithNeighborhood(neighborhoodId, q);
+                return Ok(owners);
+            };
         }
 
         [HttpGet("{id}", Name = "GetOwner")]
@@ -84,7 +59,7 @@ namespace MyDogWalkingAPI.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                    SELECT o.Id, o.Name, o.Address, o.NeighborhoodId, o.Address, o.Phone, n.Name AS NeighborhoodName, d.Name AS DogName, d.Breed
+                    SELECT o.Id, o.Name, o.Address, o.NeighborhoodId, o.Address, o.Phone, n.Name AS NeighborhoodName, d.Name AS DogName, d.Breed, d.Id As DogId, d.Notes, d.OwnerId
                     FROM Owner o
                     LEFT JOIN Neighborhood n
                     ON n.Id= o.NeighborhoodId
@@ -116,12 +91,15 @@ namespace MyDogWalkingAPI.Controllers
                                 },
                                 Dogs = new List<Dog>()
 
-                        };
+                            };
 
                         }
                         owner.Dogs.Add(new Dog {
+                            Id = reader.GetInt32(reader.GetOrdinal("DogId")),
                             Name = reader.GetString(reader.GetOrdinal("DogName")),
-                            Breed = reader.GetString(reader.GetOrdinal("Breed"))
+                            Breed = reader.GetString(reader.GetOrdinal("Breed")),
+                            Notes = reader.GetString(reader.GetOrdinal("Notes")), 
+                            OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId"))
 
                         });
                     }
@@ -232,6 +210,111 @@ namespace MyDogWalkingAPI.Controllers
             }
         }
 
+        private List<Owner> GetAllOwners ([FromQuery] int? neighborhoodId, [FromQuery] string q)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                    SELECT o.Id, o.Name, o.Address, o.NeighborhoodId, o.Address, o.Phone
+                    FROM Owner o
+                    WHERE 1=1";
+
+                    if (neighborhoodId != null)
+                    {
+                        cmd.CommandText += " AND NeighborhoodId = @neighborhoodId";
+                        cmd.Parameters.Add(new SqlParameter("@neighborhoodId", neighborhoodId));
+                    }
+
+                    if (q != null)
+                    {
+                        cmd.CommandText += " AND Name LIKE @Name";
+                        cmd.Parameters.Add(new SqlParameter("@Name", "%" + q + "%"));
+                    }
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    List<Owner> owners = new List<Owner>();
+
+                    while (reader.Read())
+                    {
+                        Owner owner = new Owner
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            Address = reader.GetString(reader.GetOrdinal("Address")),
+                            Phone = reader.GetString(reader.GetOrdinal("Phone")),
+                            NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
+                        
+
+                        };
+
+                        owners.Add(owner);
+                    }
+                    reader.Close();
+
+                    return owners;
+                }
+            }
+
+        }
+
+        private List<Owner> GetOwnerWithNeighborhood([FromQuery] int? neighborhoodId, [FromQuery] string q)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                    SELECT o.Id, o.Name, o.Address, o.NeighborhoodId, o.Address, o.Phone, n.Name AS NeighborhoodName
+                    FROM Owner o
+                    LEFT JOIN Neighborhood n
+                    ON n.Id= o.NeighborhoodId
+                    WHERE 1=1";
+
+                    if (neighborhoodId != null)
+                    {
+                        cmd.CommandText += " AND NeighborhoodId = @neighborhoodId";
+                        cmd.Parameters.Add(new SqlParameter("@neighborhoodId", neighborhoodId));
+                    }
+
+                    if( q != null)
+                    {
+                        cmd.CommandText += " AND o.Name LIKE @Name";
+                        cmd.Parameters.Add(new SqlParameter("@Name", "%" + q + "%"));
+                    }
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    List<Owner> owners = new List<Owner>();
+
+                    while (reader.Read())
+                    {
+                        Owner owner = new Owner
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name")),
+                            Address = reader.GetString(reader.GetOrdinal("Address")),
+                            Phone = reader.GetString(reader.GetOrdinal("Phone")),
+                            NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
+                            Neighborhood = new Neighborhood
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
+                                Name = reader.GetString(reader.GetOrdinal("NeighborhoodName"))
+                            }
+
+                        };
+
+                        owners.Add(owner);
+                    }
+                    reader.Close();
+
+                    return owners;
+                }
+            }
+        }
         private bool OwnerExists(int id)
         {
             using (SqlConnection conn = Connection)

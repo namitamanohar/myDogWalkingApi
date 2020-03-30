@@ -32,7 +32,7 @@ namespace MyDogWalkingAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get()
+        public async Task<IActionResult> Get([FromQuery] int? neighborhoodId)
         {
             using (SqlConnection conn = Connection)
             {
@@ -45,7 +45,14 @@ namespace MyDogWalkingAPI.Controllers
                     LEFT JOIN Owner o
                     ON o.Id= d.OwnerId
                     LEFT JOIN Neighborhood n
-                    ON o.NeighborhoodId = n.Id";
+                    ON o.NeighborhoodId = n.Id
+                    WHERE 1=1";
+
+                    if (neighborhoodId != null)
+                    {
+                        cmd.CommandText += " AND NeighborhoodId = @neighborhoodId";
+                        cmd.Parameters.Add(new SqlParameter("@neighborhoodId", neighborhoodId));
+                    }
 
                     SqlDataReader reader = cmd.ExecuteReader();
 

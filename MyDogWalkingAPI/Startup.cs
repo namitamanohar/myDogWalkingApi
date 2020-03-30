@@ -34,6 +34,8 @@ namespace MyDogWalkingAPI
             {
                 app.UseDeveloperExceptionPage();
             }
+            //app.UseCors(options => options.WithOrigins("http://LocalHost:3000"));
+
 
             app.UseRouting();
 
