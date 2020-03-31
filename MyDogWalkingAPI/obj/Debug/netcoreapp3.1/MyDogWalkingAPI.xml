@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>MyDogWalkingAPI</name>
+    </assembly>
+    <members>
+        <member name="M:MyDogWalkingAPI.Controllers.OwnerController.Get(System.Nullable{System.Int32},System.String,System.String)">
+            <summary>
+            
+            </summary>
+            <param name="neighborhoodId">supports neighborhoodName</param>
+            <param name="include"></param>
+            <param name="q"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

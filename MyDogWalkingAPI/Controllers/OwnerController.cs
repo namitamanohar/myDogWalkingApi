@@ -30,7 +30,13 @@ namespace MyDogWalkingAPI.Controllers
                 return new SqlConnection(_config.GetConnectionString("DefaultConnection"));
             }
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="neighborhoodId">supports neighborhoodName</param>
+        /// <param name="include"></param>
+        /// <param name="q"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<IActionResult> Get(
             [FromQuery] int? neighborhoodId,
